@@ -1,13 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense, lazy } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from '@supabase/auth-helpers-react';
 import { MedievalSharp } from 'next/font/google';
 import IsometricCanvas from '@/components/map/IsometricCanvas';
-import { Coins, Zap, Crown } from 'lucide-react';
+import { Coins, Zap, Crown, RefreshCw } from 'lucide-react';
 import ShopModal from '@/components/economy/ShopModal';
 import InviteModal from '@/components/economy/InviteModal';
+
+// Lazy load Three.js component to avoid SSR issues
+const ThreeWorld = lazy(() => import('@/components/map/ThreeWorld'));
 
 const fontMedieval = MedievalSharp({ weight: '400', subsets: ['latin'] });
 
@@ -82,6 +85,7 @@ export default function DashboardPage() {
   const [isShopOpen, setIsShopOpen] = useState(false);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [pendingRequests, setPendingRequests] = useState([]);
+  const [use3D, setUse3D] = useState(true); // Toggle between 2D and 3D view
 
   // Add global error handler
   useEffect(() => {
@@ -507,16 +511,79 @@ export default function DashboardPage() {
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'center',
-            flex: 1
+            flex: 1,
+            position: 'relative'
           }}>
-            <IsometricCanvas
-              worldData={world}
-              members={canvasMembers}
-              currentUserId={session.user.id}
-              width={900}
-              height={650}
-              onTileClick={(x, y, id) => console.log('Clicked tile', x, y, id)}
-            />
+            {/* View Toggle & Refresh Buttons */}
+            <div style={{
+              position: 'absolute',
+              top: '10px',
+              right: '10px',
+              display: 'flex',
+              gap: '10px',
+              zIndex: 10
+            }}>
+              <button
+                onClick={handleRefreshActivity}
+                disabled={refreshing}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: refreshing ? '#666' : '#C9A84C',
+                  color: '#1A2410',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: refreshing ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px'
+                }}
+              >
+                <RefreshCw size={16} style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
+                {refreshing ? 'Syncing...' : 'Sync GitHub'}
+              </button>
+              
+              <button
+                onClick={() => setUse3D(!use3D)}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#4A6B3A',
+                  color: '#e0d8c8',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 'bold'
+                }}
+              >
+                {use3D ? '2D View' : '3D View'}
+              </button>
+            </div>
+            
+            {use3D ? (
+              <Suspense fallback={
+                <div style={{ color: '#C9A84C', fontSize: '1.5rem' }}>
+                  Loading 3D World...
+                </div>
+              }>
+                <ThreeWorld
+                  worldData={world}
+                  members={canvasMembers}
+                  width={900}
+                  height={650}
+                />
+              </Suspense>
+            ) : (
+              <IsometricCanvas
+                worldData={world}
+                members={canvasMembers}
+                currentUserId={session.user.id}
+                width={900}
+                height={650}
+                onTileClick={(x, y, id) => console.log('Clicked tile', x, y, id)}
+              />
+            )}
           </div>
         </div>
 

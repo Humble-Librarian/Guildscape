@@ -16,6 +16,12 @@ export async function POST(request) {
   const display_name = userData.user_metadata?.full_name ?? null;
   const avatar_url = userData.user_metadata?.avatar_url ?? null;
   const email = userData.email ?? null;
+  
+  // Get GitHub access token from the identity provider
+  const githubAccessToken = userData.identities?.[0]?.identity_data?.access_token ?? 
+                           userData.user_metadata?.access_token ?? null;
+  
+  console.log('GitHub auth sync - username:', github_username, 'hasToken:', !!githubAccessToken);
 
   const { data: existingUser } = await supabaseAdmin
     .from('users')
@@ -78,6 +84,14 @@ export async function POST(request) {
       }
     }
 
+    // Update access token for existing user
+    if (githubAccessToken) {
+      await supabaseAdmin
+        .from('users')
+        .update({ github_access_token: githubAccessToken })
+        .eq('id', existingUser.id);
+    }
+
     return NextResponse.json({ isNew: false, worldId: world?.id });
   }
 
@@ -89,6 +103,7 @@ export async function POST(request) {
       github_username,
       display_name,
       avatar_url,
+      github_access_token: githubAccessToken,
     })
     .select('id')
     .single();
