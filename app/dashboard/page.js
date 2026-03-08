@@ -1,16 +1,14 @@
 'use client';
 
-import { useEffect, useState, Suspense, lazy } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from '@supabase/auth-helpers-react';
 import { MedievalSharp } from 'next/font/google';
 import IsometricCanvas from '@/components/map/IsometricCanvas';
+import ThreeWorld from '@/components/map/ThreeWorld';
 import { Coins, Zap, Crown, RefreshCw } from 'lucide-react';
 import ShopModal from '@/components/economy/ShopModal';
 import InviteModal from '@/components/economy/InviteModal';
-
-// Lazy load Three.js component to avoid SSR issues
-const ThreeWorld = lazy(() => import('@/components/map/ThreeWorld'));
 
 const fontMedieval = MedievalSharp({ weight: '400', subsets: ['latin'] });
 
@@ -562,18 +560,12 @@ export default function DashboardPage() {
             </div>
             
             {use3D ? (
-              <Suspense fallback={
-                <div style={{ color: '#C9A84C', fontSize: '1.5rem' }}>
-                  Loading 3D World...
-                </div>
-              }>
-                <ThreeWorld
-                  worldData={world}
-                  members={canvasMembers}
-                  width={900}
-                  height={650}
-                />
-              </Suspense>
+              <ThreeWorld
+                worldData={world}
+                members={canvasMembers}
+                width={900}
+                height={650}
+              />
             ) : (
               <IsometricCanvas
                 worldData={world}
