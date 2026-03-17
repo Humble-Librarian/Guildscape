@@ -2,21 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { TokenInput } from "./TokenInput";
 
 export default function SearchBar() {
   const [username, setUsername] = useState("");
-  const [token, setToken] = useState("");
   const router = useRouter();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (username.trim()) {
-      let url = `/${encodeURIComponent(username.trim())}`;
-      if (token.trim()) {
-        url += `?token=${encodeURIComponent(token.trim())}`;
-      }
-      router.push(url);
+      router.push(`/${encodeURIComponent(username.trim())}`);
     }
   };
 
@@ -38,7 +32,6 @@ export default function SearchBar() {
           Search
         </button>
       </form>
-      <TokenInput value={token} onChange={setToken} />
     </div>
   );
 }

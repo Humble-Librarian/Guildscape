@@ -9,14 +9,15 @@ import HeatmapGrid from "@/components/HeatmapGrid";
 import { formatNumber } from "@/lib/utils";
 import { Suspense } from "react";
 import type { Metadata } from "next";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { redirect } from "next/navigation";
+import { LogoutButton } from "@/components/LogoutButton";
 
 // For Next.js 14 App Router, page params are available via the `params` object.
 interface PageProps {
   params: {
     username: string;
-  };
-  searchParams: {
-    token?: string;
   };
 }
 
@@ -28,9 +29,21 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function UserProfilePage({ params, searchParams }: PageProps) {
+export default async function UserProfilePage({ params }: PageProps) {
   const { username } = await params;
-  const { token } = await searchParams;
+  
+  const session = await getServerSession(authOptions);
+
+  if (!session) {
+    redirect("/");
+  }
+
+  // Users can only view their own dashboard in this authorized version
+  if (session.username !== username) {
+    redirect(`/${session.username}`);
+  }
+
+  const token = session.accessToken;
   
   const profile = await fetchUser(username, token);
   
@@ -51,10 +64,11 @@ export default async function UserProfilePage({ params, searchParams }: PageProp
 
   return (
     <main className="min-h-screen p-6 sm:p-12 max-w-6xl mx-auto space-y-8">
-      <nav className="mb-4">
+      <nav className="mb-4 flex justify-between items-center">
         <Link href="/" className="text-secondary hover:text-primary transition-colors flex items-center gap-2">
           &larr; Back to search
         </Link>
+        <LogoutButton />
       </nav>
       
       <ProfileHeader user={profile} />
